@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Calendar API</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="bootstrap.min.js"></script>
+	<div id="app">
+		<register ref="register"></register>
+		<login ref="login"></login>
+		<div class="container">
+			<parameters ref="parameters"></parameters>
+			<div class="row mt-3">
+				<div class="col-lg-4">
+					<anonymous ref="anonymous"></anonymous>
+					<empty v-show="empty"></empty>
+					<event v-for="event in events" v-bind:event="event"></event>
+				</div>
+				<div class="col-lg-8 card border-dark" style="height: 750px">
+					<eventform ref="event"></eventform>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="vue.js"></script>
+	<script src="script.js"></script>
+</body>
+</html>

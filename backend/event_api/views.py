@@ -1,11 +1,48 @@
+from django.http import QueryDict
+from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.response import Response
 from .models import *
 from .serializers import *
 import datetime
 from .tasks import mail_handler
+import json
+from django.contrib.auth import authenticate
 
-mail_handler()
+
+#mail_handler()
+
+
+class RegisterSet(viewsets.ViewSet):
+
+    def register(self, request):
+        data = json.loads(request.body.decode())
+        data['is_active'] = True
+        serializer = UserSerializer(data=data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({'user': user.id})
+        else:
+            return Response(serializer.errors, status=403)
+
+
+class AuthorizeSet(viewsets.ViewSet):
+
+    def authorize(self, request):
+        data = json.loads(request.body.decode())
+        username = data['username']
+        password = data['password']
+
+        # Временная затычка. Функция authenticate не работает. Выяснить почему!
+        user = None
+        try:
+            user = User.objects.filter(username=username, password=password)[0]
+        except IndexError:
+            pass
+        if user is not None:
+            return Response({'user': user.id})
+        else:
+            return Response({'error': 'Login or password is not correct!'}, status=403)
 
 
 class EventSet(viewsets.ViewSet):
@@ -16,7 +53,7 @@ class EventSet(viewsets.ViewSet):
         user = User.objects.get(pk=user_id)
         date = request.GET.get('date', None)
         events = Event.objects.filter(title__icontains=content, user=user)
-        if date:
+        if date and len(events)>0:
             event = events.order_by('-date')[0]
             if date == 'month':
                 events = events.filter(date__gte=datetime.datetime(
@@ -33,7 +70,7 @@ class EventSet(viewsets.ViewSet):
                     event.date.day
                 ))
         serializer = EventCRUDSerializer(events, many=True)
-        return Response(serializer.data, status=200)
+        return Response(serializer.data)
 
     def retrieve(self, request, pk):
         event = Event.objects.get(pk=pk)
@@ -41,7 +78,8 @@ class EventSet(viewsets.ViewSet):
         return Response(serializer.data, status=200)
 
     def create(self, request):
-        serializer = EventCRUDSerializer(data=request.POST)
+        d = json.loads(request.body.decode())
+        serializer = EventCRUDSerializer(data=d)
         if serializer.is_valid():
             obj = serializer.save()
             return Response(EventCRUDSerializer(obj).data)
@@ -50,10 +88,11 @@ class EventSet(viewsets.ViewSet):
 
     def update(self, request, pk):
         instance = Event.objects.get(pk=pk)
-        serializer = EventCRUDSerializer(data=request.POST, instance=instance)
+        d = json.loads(request.body.decode())
+        serializer = EventCRUDSerializer(data=d, instance=instance)
         if serializer.is_valid():
             obj = serializer.save()
-            return Response(EventCRUDSerializer(obj).data)
+            return Response(EventCRUDSerializer(obj).data, status=200)
         else:
             return Response(serializer.errors)
 

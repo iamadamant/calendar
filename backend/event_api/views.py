@@ -10,7 +10,7 @@ import json
 from django.contrib.auth import authenticate
 
 
-#mail_handler()
+mail_handler()
 
 
 class RegisterSet(viewsets.ViewSet):
